@@ -1,0 +1,1227 @@
+---
+title: "Single-Cell RNA-seq Taxonomy of Bone Marrow Stroma: Homeostasis"
+author: "Patrick Blaney"
+date: "10/7/2019"
+output: html_document
+---
+
+#######################################
+Homeostasis Bone Marrow Stroma Analysis
+#######################################
+
+UPDATED: 4/8/2022
+
+Load in necessary packages
+```{r, message=FALSE}
+library(Seurat)
+library(tidyverse)
+```
+
+cellranger pipeline outputs 3 files that are used to create a Seurat object:
+1. barcodes.tsv - barcode sequences that correspond to column indices
+2. genes.tsv or features.tsv - genes/features that correspond to row indices, each entry should
+   have a feature ID followed by a name, might also include type of feature (gene expression,
+   antibody capture, CRISPR, or custom)
+3. matrix.mtx - matrix of UMI counts, other files are to be combined with this
+
+The Read10X function is used to pull all 3 files together to then create the Seurat object
+```{r}
+# WARNING - Dataset must first be downloaded, this can easily be done running the command 'make prep-datasets'
+
+# Read in all steady state gene expression sets
+std1 <- Read10X(data.dir = "data/gse128423/std1/")
+std2 <- Read10X(data.dir = "data/gse128423/std2/")
+std3 <- Read10X(data.dir = "data/gse128423/std3/")
+std4 <- Read10X(data.dir = "data/gse128423/std4/")
+std5 <- Read10X(data.dir = "data/gse128423/std5/")
+std6 <- Read10X(data.dir = "data/gse128423/std6/")
+```
+
+Instantiate Seurat objects using reads in 10X files
+```{r}
+# Creating Seurat objects for all 10x data files
+std1 <- CreateSeuratObject(counts = std1,
+                           project = "std1",
+                           assay = "RNA")
+
+std2 <- CreateSeuratObject(counts = std2,
+                           project = "std2",
+                           assay = "RNA")
+
+std3 <- CreateSeuratObject(counts = std3,
+                           project = "std3",
+                           assay = "RNA")
+
+std4 <- CreateSeuratObject(counts = std4,
+                           project = "std4",
+                           assay = "RNA")
+
+std5 <- CreateSeuratObject(counts = std5,
+                           project = "std5",
+                           assay = "RNA")
+
+std6 <- CreateSeuratObject(counts = std6,
+                           project = "std6",
+                           assay = "RNA")
+```
+
+The standard pre-processing workflow begins with looking over calculated metrics such as
+number of unique genes and molecules detected in each cell which help identify outliers
+from low-quality cells/empty droplets (few genes) and cell doublets/multiplets (abnormally 
+many genes). Additionally, the workflow includes quantifying the percentage of reads that
+map to the mitochondrial genome as high percentage is evidence of low-quality/dying cells.
+
+Filter the outliers out of the dataset based on the visualizations. Consideration of the
+cutoff for percentage of mitochondria mapped reads is dependent on the origin of the cells
+as cells from various tissues vary in their natural/expected percentage in healthy cells.
+
+QC of std1
+```{r}
+# Add column to @meta.data of Seurat object containing the percentage of mitochondrial
+# genome mapped reads. Pattern is unique to each 'gene.tsv' file
+std1[["Percent_MT"]] <- PercentageFeatureSet(object = std1,
+                                             pattern = "^mt-")
+
+# Create biolin plots for QC metrics
+VlnPlot(object = std1,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"), 
+        group.by = 'orig.ident')
+
+# Filter dataset based on QC metrics
+std1 <- subset(x = std1,
+               subset = nFeature_RNA < 5000 & nFeature_RNA > 500 & nCount_RNA < 32500 & Percent_MT < 12)
+
+# Revisualize the QC metrics after filtering
+VlnPlot(object = std1,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"),
+        group.by = 'orig.ident')
+```
+
+QC of std2
+```{r}
+# Add column to @meta.data of Seurat object containing the percentage of mitochondrial
+# genome mapped reads. Pattern is unique to each 'gene.tsv' file
+std2[["Percent_MT"]] <- PercentageFeatureSet(object = std2,
+                                             pattern = "^mt-")
+
+# Create biolin plots for QC metrics
+VlnPlot(object = std2,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"), 
+        group.by = 'orig.ident')
+
+# Filter dataset based on QC metrics
+std2 <- subset(x = std2,
+               subset = nFeature_RNA < 3250 & nFeature_RNA > 500 & nCount_RNA < 15000 & Percent_MT < 10)
+
+# Revisualize the QC metrics after filtering
+VlnPlot(object = std2,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"),
+        group.by = 'orig.ident')
+```
+
+QC of std3
+```{r}
+# Add column to @meta.data of Seurat object containing the percentage of mitochondrial
+# genome mapped reads. Pattern is unique to each 'gene.tsv' file
+std3[["Percent_MT"]] <- PercentageFeatureSet(object = std3,
+                                             pattern = "^mt-")
+
+# Create biolin plots for QC metrics
+VlnPlot(object = std3,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"), 
+        group.by = 'orig.ident')
+
+# Filter dataset based on QC metrics
+std3 <- subset(x = std3,
+               subset = nFeature_RNA < 3000 & nFeature_RNA > 500 & nCount_RNA < 12500 & Percent_MT < 10)
+
+# Revisualize the QC metrics after filtering
+VlnPlot(object = std3,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"),
+        group.by = 'orig.ident')
+```
+
+QC of std4
+```{r}
+# Add column to @meta.data of Seurat object containing the percentage of mitochondrial
+# genome mapped reads. Pattern is unique to each 'gene.tsv' file
+std4[["Percent_MT"]] <- PercentageFeatureSet(object = std4,
+                                             pattern = "^mt-")
+
+# Create biolin plots for QC metrics
+VlnPlot(object = std4,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"), 
+        group.by = 'orig.ident')
+
+# Filter dataset based on QC metrics
+std4 <- subset(x = std4,
+               subset = nFeature_RNA < 4250 & nFeature_RNA > 500 & nCount_RNA < 20000 & Percent_MT < 10)
+
+# Revisualize the QC metrics after filtering
+VlnPlot(object = std4,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"),
+        group.by = 'orig.ident')
+```
+
+QC of std5
+```{r}
+# Add column to @meta.data of Seurat object containing the percentage of mitochondrial
+# genome mapped reads. Pattern is unique to each 'gene.tsv' file
+std5[["Percent_MT"]] <- PercentageFeatureSet(object = std5,
+                                             pattern = "^mt-")
+
+# Create biolin plots for QC metrics
+VlnPlot(object = std5,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"), 
+        group.by = 'orig.ident')
+
+# Filter dataset based on QC metrics
+std5 <- subset(x = std5,
+               subset = nFeature_RNA < 4500 & nFeature_RNA > 500 & nCount_RNA < 30000 & Percent_MT < 10)
+
+# Revisualize the QC metrics after filtering
+VlnPlot(object = std5,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"),
+        group.by = 'orig.ident')
+```
+
+QC of std6
+```{r}
+# Add column to @meta.data of Seurat object containing the percentage of mitochondrial
+# genome mapped reads. Pattern is unique to each 'gene.tsv' file
+std6[["Percent_MT"]] <- PercentageFeatureSet(object = std6,
+                                             pattern = "^mt-")
+
+# Create biolin plots for QC metrics
+VlnPlot(object = std6,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"), 
+        group.by = 'orig.ident')
+
+# Filter dataset based on QC metrics
+std6 <- subset(x = std6,
+               subset = nFeature_RNA < 4000 & nFeature_RNA > 500 & nCount_RNA < 18000 & Percent_MT < 10)
+
+# Revisualize the QC metrics after filtering
+VlnPlot(object = std6,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"),
+        group.by = 'orig.ident')
+```
+
+After filtering out unwanted cells from the dataset, the next step is to normalize. The default
+method is a global-scaling that:
+1. Normalizes the feature expression measurements for each cell by the total expression
+2. Multiplies that value by a scale factor (10000 is default)
+3. Transforms the scaled value (by log or by relative count)
+Normalized values are stored in SeuratObject[["assay"]]@data
+
+With the transformed expression values, identification of features that exhibit 
+high cell-to-cell variation (highly expressed in some cells while lowly expressed in other)
+is best. These are then used in subsequent downstream analysis.
+The results of the scaling are stored in SeuratObject[["assay"]]@var.features
+Older method, calculates mean expression and dispersion for each feature, divides the features
+into binds based on mean expression then calculates z-score for dispersion within each bin.
+
+Perform normalization and variable feature selection on all std objects
+```{r}
+# Combine all objects into a single list to apply normalization and variable feature selection
+stdList <- list(std1, std2, std3, std4, std5, std6)
+
+stdList <- lapply(X = stdList, FUN =  function(x) {
+  # Normalize by relative count to align with publication
+  x <- NormalizeData(object = x,
+                     normalization.method = "LogNormalize",
+                     scale.factor = 10000,
+                     verbose = FALSE)
+  
+  # Determine top 5000 features with high cell-to-cell variation using 'vst' selection method.
+  # Newer method, fits line to relationship of log(variance) and log(mean expression) with
+  # polynomial regression to give regularized estimator of variance given mean expression of
+  # a feature. Then calculates z-scores based on observed mean expression and estimated variance.
+  # Using the z-score standardized values, the dispersion is computed across all cells and ranked.
+  x <- FindVariableFeatures(object = x,
+                            selection.method = "vst",
+                            nfeatures = 5000,
+                            verbose = FALSE)
+})
+```
+
+Before performing any dimensional reduction techniques, the data should be scaled via linear
+transformation. This does two important things:
+1. Shifts the expression of each gene, so that the mean expression across cells is 0
+2. Scales the expression of each gene, so that the variance across cells is 1 which
+   ensures that the highly-expressed genes do not dominate in downstream analysis
+The results of the scaling are stored in SeuratObject[["assay"]]@scale.data
+
+Select features among the datasets for downstream integration and run PCA on all of them using
+the integration features after scaling the data
+```{r}
+stdIntegrationFeatures <- SelectIntegrationFeatures(object.list = stdList,
+                                                    nfeatures = 5000)
+
+stdList <- lapply(X = stdList, FUN = function(x) {
+  x <- ScaleData(object = x,
+                 features = stdIntegrationFeatures,
+                 verbose = FALSE)
+  
+  x <- RunPCA(object = x,
+              features = stdIntegrationFeatures,
+              verbose = FALSE)
+})
+```
+
+# Canonical Correlation Analysis (CCA) Integration
+
+By identifying shared sources of variation between datasets, CCA is well-suited for identifying anchors when cell types are conserved, but there are very substantial differences in gene expression across experiments.
+CCA-based integration therefore enables integrative analysis when experimental conditions or disease states introduce very strong expression shifts, or when integrating datasets across modalities and species.
+However, CCA-based integration may also lead to overcorrection, especially when a large proportion of cells are non-overlapping across datasets.
+
+Identify anchors that will be used for integration of all the datasets using the CCA reduction method.
+After, scale the newly integrated dataset.
+```{r}
+stdIntegrationAnchors <- FindIntegrationAnchors(object.list = stdList,
+                                                reduction = "cca",
+                                                anchor.features = stdIntegrationFeatures)
+
+stdIntegrated <- IntegrateData(anchorset = stdIntegrationAnchors)
+
+stdIntegrated <- ScaleData(object = stdIntegrated,
+                           verbose = FALSE)
+```
+
+Before conducting any sort of dimensional reduction, filters can be applied to the set of
+variable features to remove genes that are not of interest or could muddy the analysis.
+Common filters would be for mitochondrial genes or ribosomal protein genes.
+```{r, message=FALSE}
+allGenes <- rownames(stdIntegrated[['RNA']]@counts)
+
+# First filter out all mitochondrial genes by finding all included in original gene
+# list, then checking the variable feature list to see if any of those genes were included.
+# If so, remove them from the variable feature set.
+mitochondrialGenes <- grep(pattern = "mt-",
+                           x = allGenes,
+                           ignore.case = TRUE,
+                           value = TRUE)
+
+# Remove the mitochondrial genes from the variable features list
+stdIntegrated[['integrated']]@var.features <- setdiff(x = stdIntegrated[['integrated']]@var.features,
+                                                      y = mitochondrialGenes)
+
+# To remove ribosomal protein genes, read in gene list sourced from the HUGO Gene
+# Nomenclature Committee (HGNC) and parse it to isolate gene names
+hgncRibosomalProteinGeneList <- read_delim(file = "data/hgncRibosomalProteinGeneList.txt",
+                                           col_names = TRUE, 
+                                           delim = "\t")$`Approved symbol`
+
+# Loop through ribosomal protein gene list and determine if that gene is listed
+# in the original full gene list
+ribosomalProteinGenes <- character()
+for(i in 1:length(hgncRibosomalProteinGeneList)) {
+        geneMatch <- grep(
+                pattern = paste("^", hgncRibosomalProteinGeneList[i], "$", sep = ""),
+                x = allGenes,
+                ignore.case = TRUE,
+                value = TRUE,
+                perl = TRUE)
+        ribosomalProteinGenes <- c(ribosomalProteinGenes, geneMatch)
+}
+ribosomalProteinGenes <- unique(ribosomalProteinGenes)
+
+# Remove the ribosomal protein genes from the variable features list
+stdIntegrated[['integrated']]@var.features <- setdiff(x = stdIntegrated[['integrated']]@var.features,
+                                                      y = ribosomalProteinGenes)
+
+# To remove cell cycle genes, read in gene list sourced from KEGG/Broad Institute
+keggCellCycleGeneList <- as_vector(
+        read_csv(file = "data/keggGeneSet.txt",
+                 col_names = "gene",
+                 skip = 2)
+        )
+
+# Loop through cell cycle gene list and determine if that gene is listed
+# in the original full gene list
+cellCycleGenes <- character()
+for(i in 1:length(keggCellCycleGeneList)) {
+        geneMatch <- grep(
+                pattern = paste("^", keggCellCycleGeneList[i], "$", sep = ""),
+                x = allGenes,
+                ignore.case = TRUE,
+                value = TRUE,
+                perl = TRUE)
+        cellCycleGenes <- c(cellCycleGenes, geneMatch)
+}
+
+# Remove the cell cycle genes from the variable features list
+stdIntegrated[['integrated']]@var.features <- setdiff(x = stdIntegrated[['integrated']]@var.features,
+                                                      y = cellCycleGenes)
+```
+
+Now a PCA can be performed on the integrated data after scaling. By default this is done on the 
+set of variable features that were determined upstream. However, this can be overwritten by 
+specifying with the 'features' argument. All visualizations require a 'RunPCA' function call 
+before they can be output.
+```{r}
+# Add the 'pca' reduction to the Seurat object based on the variable features
+stdIntegrated <- RunPCA(object = stdIntegrated,
+                        verbose = FALSE,
+                        npcs = 65)
+
+# Produce a PCA plot where each point represents a cell and its position relative to the
+# origin point (0,0) shows how much influence it has on the that particular PC. Additionally,
+# the correlation between two points can be determined by the angle between the vectors from
+# each point to the origin point. Smaller the angle, the more positive correlation.
+# Perpendicular angles mean likely no correlation.
+DimPlot(object = stdIntegrated,
+        reduction = "pca")
+
+# Display a heatmap showing how genes correlate with what PC. Each line represents a cell
+# and the color represents the loading of the gene (the genes shown are most extremely variable)
+# with black being 0, yellow being positive and purple being negative.
+DimHeatmap(object = stdIntegrated,
+           dims = 2,
+           balanced = TRUE)
+
+# The elbow plot displays a ranking of the PCs based on the percentage of variance explained
+# by each one.
+# There are 3 suggested methods for determining the cutoff for PCs to evaluate: PCA plotting
+# along with heatmaps, elbow plots, and jackStraw plots.
+ElbowPlot(object = stdIntegrated,
+          ndims = 65) +
+  geom_abline(aes(intercept = 1.75, slope = 0, color = "red"),
+              show.legend = FALSE)
+
+# JackStraw procedure involves random selection of subset of data (~1%) and running PCA,
+# constructing a null distribution of the feature scores and repeat. Time consuming for
+# large datasets but can be plotted to show distribution of p-values for each PC.
+#stdIntegrated <- JackStraw(object = stdIntegrated,
+#                           num.replicate = 75, 
+#                           dims = 50)
+#
+#stdIntegrated <- ScoreJackStraw(object = stdIntegrated,
+#                               dims = 1:50)
+#
+#JackStrawPlot(object = stdIntegrated, 
+#              dims = 1:50)
+```
+
+Now that the PCA has been performed and relevant PCs identified, the next step is to cluster
+the cells. The method starts by first constructing a kNN graph based on the euclidean distance
+in the PCA space and then incorporates sNN information. Next, the clusters are determined using
+modularity optimization techniques, default is the Louvain algorithm. 
+```{r}
+# First implement the kNN/sNN algorithm by specifying the number of PC dimensions identified
+# in previous step
+stdIntegrated <- FindNeighbors(object = stdIntegrated,
+                               dims = 1:50)
+
+# Next determine the clusters using the Louvain alogrithm by specifying the resolution.
+# The benchmark is between 0.4-1.2 for a 3000 cell dataset, should be increased as cell
+# count increases.
+# May need to develop loop to test different resolutions.
+stdIntegrated <- FindClusters(object = stdIntegrated,
+                              resolution = 0.59,
+                              random.seed = 2019)
+```
+
+With the clusters determined, the use of non-linear dimensional reduction plots such as
+tSNE and UMAP are great to visualize them.
+```{r}
+# Add the tSNE reduction to the Seurat object using same amount of dimensions as clustering
+# method
+stdIntegrated <- RunTSNE(object = stdIntegrated,
+                         dims = 1:50)
+
+# Plot the tSNE reduction grouped by sample origin then by cluster
+DimPlot(object = stdIntegrated,
+        reduction = "tsne",
+        group.by = 'orig.ident')
+
+DimPlot(object = stdIntegrated,
+        reduction = "tsne",
+        label = TRUE,
+        label.size = 5,
+        cols = c("aquamarine2", "blueviolet", "chartreuse2", "darkgreen", "darkred", 
+                 "darkgray", "chocolate1", "coral4", "blue", "darkmagenta", "deeppink2",
+                 "goldenrod1", "yellow1", "tan4", "tomato1", "olivedrab", "navajowhite2",
+                 "orangered", "palegreen", "peru", "plum1", "purple3", "red2", "salmon",
+                 "seagreen", "magenta", "midnightblue"))
+```
+
+Visualize which clusters contain the key genes for identifying the interested populations
+```{r}
+# Set default assay to "RNA" for this code block, will reset to "integrated" at end of block
+DefaultAssay(stdIntegrated) <- "RNA"
+
+# Markers for each population as per Scadden et al.
+# MSC - c("Lepr", "Adipoq", "Cxcl12", "Kitl", "Grem1", "Vcam1")
+# OLC - c("Bglap", "Runx2", "Sp7", "Cd200", "Spp1", "Grem1", "Mmp13")
+# Chondro - c("Sox9", "Acan", "Col2a1", "Ihh", "Pth1r", "Mef2c")
+# Pericyte - c("Acta2", "Nes", "Cspg4", "Myh11", "Mcam")
+# EC - c("Pecam1", "Cdh5", "Cd34", "Kdr", "Emcn", "Flt4", "Ly6a")
+# Fibro - c("Fn1", "S100a4", "Dcn", "Sema3c", "Cd34", "Ly6a", "Pdgfra", 
+#           "Thy1", "Cd44" "Sox9", "Scx", "Spp1", "Nt5e", "Cspg4", "Cilp")
+
+# B cells - Cd79a
+# Erythroidal - Gypa
+# Macro/Megakaryocytes - Cd52
+# 
+
+# Isolate specific cell subpopulations within tSNE plots by feature
+FeaturePlot(object = stdIntegrated,
+            features = c("Lepr", "Bglap", "Acan", "Acta2", "Cdh5", "Fn1"),
+            reduction = "tsne",
+            label = TRUE, 
+            cols = c("lightskyblue1", "red3"))
+
+FeaturePlot(object = stdIntegrated,
+            features = c("Cd79a", "Gypa", "Cd52", "Gp9"),
+            reduction = "tsne",
+            label = TRUE, 
+            cols = c("lightskyblue1", "red3"))
+
+# Plot the distribution of expression for all cells related to specific genes
+# with a violin plot
+VlnPlot(object = stdIntegrated,
+        assay = "RNA",
+        features = c("Lepr", "Bglap", "Acan", "Acta2", "Cdh5", "Fn1"),
+        pt.size = 0.5,
+        ncol = 3)
+
+VlnPlot(object = stdIntegrated,
+        assay = "RNA",
+        features = c("Cd79a", "Gypa", "Cd52", "Gp9"),
+        pt.size = 0.5,
+        ncol = 2)
+
+# Reset default assay to "integrated"
+DefaultAssay(stdIntegrated) <- "integrated"
+```
+
+Identify hematopoietic cells based on expression of markers and isolate those cells from whole set
+to be filtered out of analysis.
+
+B-Cell Filter (Cd79a, Cd79b)
+```{r}
+# Visualize the distribution of cells expressing gene markers across all clusters
+FeaturePlot(object = stdIntegrated,
+            features = c("Cd79a", "Cd79b"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 4,
+            cols = c("lightskyblue1", "red3")
+            )
+VlnPlot(object = stdIntegrated,
+        features = c("Cd79a", "Cd79b"),
+        pt.size = 0.5, 
+        idents = c(7, 9, 15, 31, 25)
+        )
+
+# Determine cutoff values for expression levels of gene markers based on expression across all cells
+markerCd79a <- stdIntegrated[["integrated"]]@scale.data["Cd79a",]
+quantile(markerCd79a, probs = seq(0.6, 1, 0.025))
+
+markerCd79b <- stdIntegrated[["integrated"]]@scale.data["Cd79b",]
+quantile(markerCd79b, probs = seq(0.6, 1, 0.025))
+
+# Identify all the cells that satisfy cutoff value which was selected to be between 85 and 90 quantile
+clusterFilter1 <- WhichCells(object = stdIntegrated,
+                             expression = Cd79a > 1 & Cd79b > 1
+                             )
+
+# Visualize count of cells per cluster
+clusterFilter1 <- table(stdIntegrated$seurat_clusters[clusterFilter1])
+```
+
+
+# Reciprocal PCA (RPCA) Integration
+
+RPCA-based integration runs significantly faster, and also represents a more conservative approach where cells in different biological states are less likely to ‘align’ after integration. We therefore, recommend RPCA during integrative analysis where:
+- A substantial fraction of cells in one dataset have no matching type in the other
+- Datasets originate from the same platform (i.e. multiple lanes of 10x genomics)
+- There are a large number of datasets or cells to integrate
+
+Identify anchors that will be used for integration of all the datasets using the reciprocal PCA
+reduction method. After scale the newly integrated dataset.
+```{r}
+stdIntegrationAnchors <- FindIntegrationAnchors(object.list = stdList,
+                                             reduction = "rpca",
+                                             anchor.features = 5000
+                                             )
+
+stdIntegrated <- IntegrateData(anchorset = stdIntegrationAnchors)
+
+stdIntegrated <- ScaleData(object = stdIntegrated,
+                           verbose = FALSE
+                           )
+```
+
+Before conducting any sort of dimensional reduction, filters can be applied to the set of
+variable features to remove genes that are not of interest or could muddy the analysis.
+Common filters would be for mitochondrial genes or ribosomal protein genes.
+```{r, message=FALSE}
+allGenes <- rownames(stdIntegrated[['RNA']]@counts)
+
+# First filter out all mitochondrial genes by finding all included in original gene
+# list, then checking the variable feature list to see if any of those genes were included.
+# If so, remove them from the variable feature set.
+mitochondrialGenes <- grep(pattern = "mt-",
+                           x = allGenes,
+                           ignore.case = TRUE,
+                           value = TRUE
+                           )
+
+# Remove the mitochondrial genes from the variable features list
+stdIntegrated[['integrated']]@var.features <- setdiff(x = stdIntegrated[['integrated']]@var.features,
+                                                      y = mitochondrialGenes
+                                                      )
+
+# To remove ribosomal protein genes, read in gene list sourced from the HUGO Gene
+# Nomenclature Committee (HGNC) and parse it to isolate gene names
+hgncRibosomalProteinGeneList <- read_delim(file = "../data/hgncRibosomalProteinGeneList.txt",
+                                           col_names = TRUE, 
+                                           delim = "\t"
+                                           )$`Approved symbol`
+
+# Loop through ribosomal protein gene list and determine if that gene is listed
+# in the original full gene list
+ribosomalProteinGenes <- character()
+for(i in 1:length(hgncRibosomalProteinGeneList)) {
+        geneMatch <- grep(
+                pattern = paste("^", hgncRibosomalProteinGeneList[i], "$", sep = ""),
+                x = allGenes,
+                ignore.case = TRUE,
+                value = TRUE,
+                perl = TRUE
+                )
+        ribosomalProteinGenes <- c(ribosomalProteinGenes, geneMatch)
+}
+ribosomalProteinGenes <- unique(ribosomalProteinGenes)
+
+# Remove the ribosomal protein genes from the variable features list
+stdIntegrated[['integrated']]@var.features <- setdiff(x = stdIntegrated[['integrated']]@var.features,
+                                                      y = ribosomalProteinGenes
+                                                      )
+
+# To remove cell cycle genes, read in gene list sourced from KEGG/Broad Institute
+keggCellCycleGeneList <- as_vector(
+        read_csv(file = "../data/keggGeneSet.txt",
+                 col_names = "gene",
+                 skip = 2
+                 )
+        )
+
+# Loop through cell cycle gene list and determine if that gene is listed
+# in the original full gene list
+cellCycleGenes <- character()
+for(i in 1:length(keggCellCycleGeneList)) {
+        geneMatch <- grep(
+                pattern = paste("^", keggCellCycleGeneList[i], "$", sep = ""),
+                x = allGenes,
+                ignore.case = TRUE,
+                value = TRUE,
+                perl = TRUE
+                )
+        cellCycleGenes <- c(cellCycleGenes, geneMatch)
+}
+
+# Remove the cell cycle genes from the variable features list
+stdIntegrated[['integrated']]@var.features <- setdiff(x = stdIntegrated[['integrated']]@var.features,
+                                                      y = cellCycleGenes
+                                                      )
+```
+
+Now a PCA can be performed on the integrated data after scaling. By default this is done on the 
+set of variable features that were determined upstream. However, this can be overwritten by 
+specifying with the 'features' argument. All visualizations require a 'RunPCA' function call 
+before they can be output.
+```{r}
+# Add the 'pca' reduction to the Seurat object based on the variable features
+stdIntegrated <- RunPCA(object = stdIntegrated,
+                        verbose = FALSE,
+                        npcs = 65
+                        )
+
+# Produce a PCA plot where each point represents a cell and its position relative to the
+# origin point (0,0) shows how much influence it has on the that particular PC. Additionally,
+# the correlation between two points can be determined by the angle between the vectors from
+# each point to the origin point. Smaller the angle, the more positive correlation.
+# Perpendicular angles mean likely no correlation.
+DimPlot(object = stdIntegrated,
+        reduction = "pca"
+        )
+
+# Display a heatmap showing how genes correlate with what PC. Each line represents a cell
+# and the color represents the loading of the gene (the genes shown are most extremely variable)
+# with black being 0, yellow being positive and purple being negative.
+DimHeatmap(object = stdIntegrated,
+           dims = 1,
+           balanced = TRUE
+           )
+
+# The elbow plot displays a ranking of the PCs based on the percentage of variance explained
+# by each one.
+# There are 3 suggested methods for determining the cutoff for PCs to evaluate: PCA plotting
+# along with heatmaps, elbow plots, and jackStraw plots.
+ElbowPlot(
+  object = stdIntegrated, 
+  ndims = 65
+  ) +
+  geom_abline(
+    aes(intercept = 1.75, slope = 0, color = "red"),
+    show.legend = FALSE
+  )
+
+# JackStraw procedure involves random selection of subset of data (~1%) and running PCA,
+# constructing a null distribution of the feature scores and repeat. Time consuming for
+# large datasets but can be plotted to show distribution of p-values for each PC.
+#stdIntegrated <- JackStraw(object = stdIntegrated,
+#                           num.replicate = 75, 
+#                           dims = 50
+#                           )
+
+#stdIntegrated <- ScoreJackStraw(object = stdIntegrated,
+#                                dims = 1:50
+#                                )
+
+#JackStrawPlot(object = stdIntegrated, 
+#              dims = 1:50
+#              )
+```
+
+Now that the PCA has been performed and relevant PCs identified, the next step is to cluster
+the cells. The method starts by first constructing a kNN graph based on the euclidean distance
+in the PCA space and then incorporates sNN information. Next, the clusters are determined using
+modularity optimization techniques, default is the Louvain algorithm. 
+```{r}
+# First implement the kNN/sNN algorithm by specifying the number of PC dimensions identified
+# in previous step
+stdIntegrated <- FindNeighbors(object = stdIntegrated,
+                               dims = 1:50
+                               )
+
+# Next determine the clusters using the Louvain alogrithm by specifying the resolution.
+# The benchmark is between 0.4-1.2 for a 3000 cell dataset, should be increased as cell
+# count increases.
+# May need to develop loop to test different resolutions.
+stdIntegrated <- FindClusters(object = stdIntegrated,
+                              resolution = 0.59,
+                              random.seed = 2019
+                              )
+```
+
+With the clusters determined, the use of non-linear dimensional reduction plots such as
+tSNE and UMAP are great to visualize them.
+```{r}
+# Add the tSNE reduction to the Seurat object using same amount of dimensions as clustering
+# method
+stdIntegrated <- RunTSNE(object = stdIntegrated,
+                         dims = 1:50
+                         )
+
+# Plot the tSNE reduction grouped by sample origin then by cluster
+DimPlot(object = stdIntegrated,
+        reduction = "tsne",
+        group.by = 'orig.ident'
+        )
+
+DimPlot(object = stdIntegrated,
+        reduction = "tsne",
+        label = TRUE,
+        label.size = 5,
+        cols = c("aquamarine2", "blueviolet", "chartreuse2", "darkgreen", "darkred", 
+                 "darkgray", "chocolate1", "coral4", "blue", "darkmagenta", "deeppink2",
+                 "goldenrod1", "yellow1", "tan4", "tomato1", "olivedrab", "navajowhite2",
+                 "orangered", "palegreen", "peru", "plum1", "purple3", "red2", "salmon",
+                 "seagreen", "magenta", "midnightblue", "khaki", "greenyellow", "deeppink",
+                 "burlywood3", "dimgray", "firebrick") 
+        )
+```
+
+Visualize which clusters contain the key genes for identifying the interested populations
+```{r}
+# Markers for each population as per Scadden et al.
+# MSC - c("Lepr", "Adipoq", "Cxcl12", "Kitl", "Grem1", "Vcam1")
+# OLC - c("Bglap", "Runx2", "Sp7", "Cd200", "Spp1", "Grem1", "Mmp13")
+# Chondro - c("Sox9", "Acan", "Col2a1", "Ihh", "Pth1r", "Mef2c")
+# Pericyte - c("Acta2", "Nes", "Cspg4", "Myh11", "Mcam")
+# EC - c("Pecam1", "Cdh5", "Cd34", "Kdr", "Emcn", "Flt4", "Ly6a")
+# Fibro - c("Fn1", "S100a4", "Dcn", "Sema3c", "Cd34", "Ly6a", "Pdgfra", 
+#           "Thy1", "Cd44" "Sox9", "Scx", "Spp1", "Nt5e", "Cspg4", "Cilp")
+
+# Isolate specific cell subpopulations within tSNE plots by feature
+FeaturePlot(object = stdIntegrated,
+            features = c("Spp1", "Nt5e", "Cspg4", "Cilp"),
+            reduction = "tsne",
+            label = TRUE, 
+            cols = c("lightskyblue1", "red3"), 
+            )
+
+# Plot the distribution of expression for all cells related to specific genes
+# with a violin plot
+VlnPlot(object = stdIntegrated,
+        features = c("Spp1", "Nt5e", "Cspg4", "Cilp"),
+        pt.size = 0.5,
+        idents = c(28),
+        ncol = 2
+        )
+```
+
+Identify hematopoietic cells based on expression of markers and isolate those cells from whole set
+to be filtered out of analysis.
+
+B-Cell Filter (Cd79a, Cd79b)
+```{r}
+# Visualize the distribution of cells expressing gene markers across all clusters
+FeaturePlot(object = stdIntegrated,
+            features = c("Cd79a", "Cd79b"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 4,
+            cols = c("lightskyblue1", "red3")
+            )
+VlnPlot(object = stdIntegrated,
+        features = c("Cd79a", "Cd79b"),
+        pt.size = 0.5, 
+        idents = c(7, 9, 15, 31, 25)
+        )
+
+# Determine cutoff values for expression levels of gene markers based on expression across all cells
+markerCd79a <- stdIntegrated[["integrated"]]@scale.data["Cd79a",]
+quantile(markerCd79a, probs = seq(0.6, 1, 0.025))
+
+markerCd79b <- stdIntegrated[["integrated"]]@scale.data["Cd79b",]
+quantile(markerCd79b, probs = seq(0.6, 1, 0.025))
+
+# Identify all the cells that satisfy cutoff value which was selected to be between 85 and 90 quantile
+clusterFilter1 <- WhichCells(object = stdIntegrated,
+                             expression = Cd79a > 1 & Cd79b > 1
+                             )
+
+# Visualize count of cells per cluster
+clusterFilter1 <- table(stdIntegrated$seurat_clusters[clusterFilter1])
+```
+
+Erythroid Filter (Cd235a, Cd113t-C, Cd241, Cd240ce, Cd71)
+```{r}
+# Visualize the distribution of cells expressing gene markers across all clusters
+FeaturePlot(object = stdIntegrated,
+            features = c("Gypa", "Hbb-bt", "Hbb-bs", "Rhag", "Rhd", "Tfrc"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 4,
+            cols = c("lightskyblue1", "red3")
+            )
+VlnPlot(object = stdIntegrated,
+        features = c("Gypa", "Hbb-bt", "Hbb-bs", "Rhag", "Rhd", "Tfrc"),
+        pt.size = 0.5, 
+        idents = c(5, 14)
+        )
+
+# Determine cutoff values for expression levels of gene markers based on expression across all cells
+markerGypa <- stdIntegrated[["integrated"]]@scale.data["Gypa",]
+quantile(markerGypa, probs = seq(0.6, 1, 0.025))
+
+markerHbbbt <- stdIntegrated[["integrated"]]@scale.data["Hbb-bt",]
+quantile(markerHbbbt, probs = seq(0.6, 1, 0.025))
+
+markerHbbbs <- stdIntegrated[["integrated"]]@scale.data["Hbb-bs",]
+quantile(markerHbbbs, probs = seq(0.6, 1, 0.025))
+
+markerRhag <- stdIntegrated[["integrated"]]@scale.data["Rhag",]
+quantile(markerRhag, probs = seq(0.6, 1, 0.025))
+
+markerRhd <- stdIntegrated[["integrated"]]@scale.data["Rhd",]
+quantile(markerRhd, probs = seq(0.6, 1, 0.025))
+
+markerTfrc <- stdIntegrated[["integrated"]]@scale.data["Tfrc",]
+quantile(markerTfrc, probs = seq(0.6, 1, 0.025))
+
+# Identify all the cells that satisfy cutoff value which was selected based on distribution
+clusterFilter2 <- WhichCells(
+        object = stdIntegrated,
+        expression = Gypa > 0.15 & "Hbb-bt" > 0.15 & "Hbb-bs" > 0.15 & Rhag > 0.15 & Rhd > 0.15 & Tfrc > 0.15
+        )
+
+# Visualize count of cells per cluster
+clusterFilter2 <- table(stdIntegrated$seurat_clusters[clusterFilter2])
+```
+
+Granulocyte Filter (Cd52, Cd177, Cd367, Cd87)
+```{r}
+# Visualize the distribution of cells expressing gene markers across all clusters
+FeaturePlot(object = stdIntegrated,
+            features = c("Cd52", "Cd177", "Plaur", "Clec4a2"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 4,
+            cols = c("lightskyblue1", "red3")
+            )
+VlnPlot(object = stdIntegrated,
+        features = c("Cd52", "Cd177", "Plaur", "Clec4a2"),
+        pt.size = 0.5, 
+        idents = c(18, 22, 26),
+        ncol = 2
+        )
+
+# Determine cutoff values for expression levels of gene markers based on expression across all cells
+markerCd52 <- stdIntegrated[["integrated"]]@scale.data["Cd52",]
+quantile(markerCd52, probs = seq(0.6, 1, 0.025))
+
+markerCd177 <- stdIntegrated[["integrated"]]@scale.data["Cd177",]
+quantile(markerCd177, probs = seq(0.6, 1, 0.025))
+
+markerPlaur <- stdIntegrated[["integrated"]]@scale.data["Plaur",]
+quantile(markerPlaur, probs = seq(0.6, 1, 0.025))
+
+markerClec4a2 <- stdIntegrated[["integrated"]]@scale.data["Clec4a2",]
+quantile(markerClec4a2, probs = seq(0.6, 1, 0.025))
+
+# Identify all the cells that satisfy cutoff value which was selected based on distribution
+clusterFilter3 <- WhichCells(object = stdIntegrated,
+                             expression = Cd52 > 0.4 & Cd177 > 0.075 & Plaur > 0.25 & Clec4a2 > 0.5
+                             )
+
+# Visualize count of cells per cluster
+clusterFilter3 <-table(stdIntegrated$seurat_clusters[clusterFilter3])
+```
+
+B-Cell/Granulocyte Filter (Cd52, Cd162, Cd20l3, Cd53)
+```{r}
+# Visualize the distribution of cells expressing gene markers across all clusters
+FeaturePlot(object = stdIntegrated,
+            features = c("Cd52", "Selplg", "Ms4a6b", "Cd53"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 4,
+            cols = c("lightskyblue1", "red3") 
+            )
+VlnPlot(object = stdIntegrated,
+        features = c("Cd52", "Selplg", "Ms4a6b", "Cd53"),
+        pt.size = 0.5, 
+        idents = c(7, 15, 9, 31, 25, 18, 22, 26, 29),
+        ncol = 2
+        )
+
+# Determine cutoff values for expression levels of gene markers based on expression across all cells
+markerSelplg <- stdIntegrated[["integrated"]]@scale.data["Selplg",]
+quantile(markerSelplg, probs = seq(0.6, 1, 0.025))
+
+markerMs4a6b <- stdIntegrated[["integrated"]]@scale.data["Ms4a6b",]
+quantile(markerMs4a6b, probs = seq(0.6, 1, 0.025))
+
+markerCd53 <- stdIntegrated[["integrated"]]@scale.data["Cd53",]
+quantile(markerCd53, probs = seq(0.6, 1, 0.025))
+
+# Identify all the cells that satisfy cutoff value which was selected based on distribution
+clusterFilter4 <- WhichCells(object = stdIntegrated,
+                             expression = Cd52 > 0.4 & Selplg > 0.15 & Ms4a6b > 0.009 & Cd53 > 0.33
+                             )
+
+# Visualize count of cells per cluster
+clusterFilter4 <-table(stdIntegrated$seurat_clusters[clusterFilter4])
+```
+
+Macrocyte/Megakaryocyte Filter (Cd42a, Cd41, Cd9, Cd42c)
+```{r}
+# Visualize the distribution of cells expressing gene markers across all clusters
+FeaturePlot(object = stdIntegrated,
+            features = c("Gp9", "Itga2b", "Cd9", "Gp1bb"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 4,
+            cols = c("lightskyblue1", "red3") 
+            )
+VlnPlot(object = stdIntegrated,
+        features = c("Gp9", "Itga2b", "Cd9", "Gp1bb"),
+        pt.size = 0.5,
+        idents = c(21, 30),
+        ncol = 2
+        )
+
+# Determine cutoff values for expression levels of gene markers based on expression across all cells
+markerGp9 <- stdIntegrated[["integrated"]]@scale.data["Gp9",]
+quantile(markerGp9, probs = seq(0.6, 1, 0.025))
+
+markerItga2b <- stdIntegrated[["integrated"]]@scale.data["Itga2b",]
+quantile(markerItga2b, probs = seq(0.6, 1, 0.025))
+
+markerCd9 <- stdIntegrated[["integrated"]]@scale.data["Cd9",]
+quantile(markerCd9, probs = seq(0.6, 1, 0.025))
+
+markerGp1bb <- stdIntegrated[["integrated"]]@scale.data["Gp1bb",]
+quantile(markerGp1bb, probs = seq(0.6, 1, 0.025))
+
+# Identify all the cells that satisfy cutoff value which was selected based on distribution
+clusterFilter5 <- WhichCells(object = stdIntegrated,
+                             expression = Gp9 > 0.75 & Itga2b > 0.75 & Cd9 > 1.25 & Gp1bb > 1
+                             )
+
+# Visualize count of cells per cluster
+clusterFilter5 <-table(stdIntegrated$seurat_clusters[clusterFilter5])
+```
+
+Additional Granulocyte Filter (Cd20l, Cd371, Cd32a)
+```{r}
+# Visualize the distribution of cells expressing gene markers across all clusters
+FeaturePlot(object = stdIntegrated,
+            features = c("Ms4a3", "Clec12a", "Fcgr3"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 4,
+            cols = c("lightskyblue1", "red3")
+            )
+VlnPlot(object = stdIntegrated,
+        features = c("Ms4a3", "Clec12a", "Fcgr3"),
+        pt.size = 0.5,
+        idents = c(18, 22, 26),
+        ncol = 2
+        )
+
+# Determine cutoff values for expression levels of gene markers based on expression across all cells
+markerMs4a3 <- stdIntegrated[["integrated"]]@scale.data["Ms4a3",]
+quantile(markerMs4a3, probs = seq(0.6, 1, 0.025))
+
+markerClec12a <- stdIntegrated[["integrated"]]@scale.data["Clec12a",]
+quantile(markerClec12a, probs = seq(0.6, 1, 0.025))
+
+markerFcgr3 <- stdIntegrated[["integrated"]]@scale.data["Fcgr3",]
+quantile(markerFcgr3, probs = seq(0.6, 1, 0.025))
+
+# Identify all the cells that satisfy cutoff value which was selected based on distribution
+clusterFilter6 <- WhichCells(object = stdIntegrated,
+                             expression = Ms4a3 > 0.1 & Clec12a > 0.33 & Fcgr3 > 0.5
+                             )
+
+# Visualize count of cells per cluster
+clusterFilter6 <-table(stdIntegrated$seurat_clusters[clusterFilter6])
+```
+
+First compare lists of annotated clusters of hematopoietic vs non-hematopoietic to see if
+which clusters are potential overlaps as they could indicate doublets or an expected
+correlation. Combine all cluster filters to determine which clusters to remove from the 
+analysis then subset the dataset to rest of clusters before re-evaluating the clustering
+```{r}
+# List all clusters that were annotated as non-hematopoietic
+nonHematopoieticClusters <- unique(
+  c(0, 20, 32, 28, 12, 11, 2, 2, 24, 3, 11,
+    4, 6, 13, 2, 24, 28, 12, 3, 11, 4, 6, 13,
+    27, 23, 17, 32, 25, 1, 10, 8, 19, 16, 18
+    )
+)
+nonHematopoieticClusters <- nonHematopoieticClusters[order(nonHematopoieticClusters)]
+
+# List all clusters that were annotated as hematopoietic
+hematopoieticClusters <- unique(
+  c(7, 15, 9, 31, 25, 29, 5, 14, 18, 22, 26, 21, 30)
+)
+hematopoieticClusters <- hematopoieticClusters[order(hematopoieticClusters)]
+
+# Check which clusters are shared between to two annotation lists
+hematopoieticClusters[hematopoieticClusters %in% nonHematopoieticClusters]
+
+# Combine all filters into one
+masterClusterFilter <- cbind(clusterFilter1,
+                             clusterFilter2,
+                             clusterFilter3,
+                             clusterFilter4,
+                             clusterFilter5,
+                             clusterFilter6
+                             )
+
+# Total all the cells that were caught by filters per each cluster
+masterClusterFilter <- rowSums(masterClusterFilter)
+
+# Calculate the fraction of cells that were caught by filters vs total number of cells per cluster
+c(
+  (masterClusterFilter[6] / sum(stdIntegrated$seurat_clusters == 5)),
+  (masterClusterFilter[8] / sum(stdIntegrated$seurat_clusters == 7)),
+  (masterClusterFilter[10] / sum(stdIntegrated$seurat_clusters == 9)),
+  (masterClusterFilter[15] / sum(stdIntegrated$seurat_clusters == 14)),
+  (masterClusterFilter[16] / sum(stdIntegrated$seurat_clusters == 15)),
+  (masterClusterFilter[19] / sum(stdIntegrated$seurat_clusters == 18)),
+  (masterClusterFilter[22] / sum(stdIntegrated$seurat_clusters == 21)),
+  (masterClusterFilter[23] / sum(stdIntegrated$seurat_clusters == 22)),
+  (masterClusterFilter[26] / sum(stdIntegrated$seurat_clusters == 25)),
+  (masterClusterFilter[27] / sum(stdIntegrated$seurat_clusters == 26)),
+  (masterClusterFilter[30] / sum(stdIntegrated$seurat_clusters == 29)),
+  (masterClusterFilter[31] / sum(stdIntegrated$seurat_clusters == 30)),
+  (masterClusterFilter[32] / sum(stdIntegrated$seurat_clusters == 31))
+)
+```
+
+Subset dataset to remove the clusters identified as containing hematopoietic cells then recluster
+and visualize the improved tSNE
+```{r}
+stdStromal <- subset(
+        stdIntegrated, 
+        idents = c(0, 1, 2, 3, 4, 6, 8, 10, 11, 12, 13, 16, 17, 19, 20, 23, 24, 27, 28, 32)
+        )
+
+# Rerun the PCA on the stromal population clusters alone
+stdStromal <- RunPCA(object = stdStromal,
+                    npcs = 50
+                    )
+
+# Recalculate the neighbors and clusters for the stromal population 
+stdStromal <- FindNeighbors(object = stdStromal,
+                            dims = 1:50
+                            )
+stdStromal <- FindClusters(object = stdStromal,
+                           resolution = 0.309,
+                           random.seed = 2019
+                           )
+
+# Rerun the tSNE on the stromal population
+stdStromal <- RunTSNE(object = stdStromal,
+                      dims = 1:50
+                      )
+
+# Plot the new tSNE of stromal population
+DimPlot(
+  object = stdStromal,
+  reduction = "tsne",
+  label = TRUE,
+  label.size = 5,
+  cols = c("aquamarine2", "blueviolet", "chartreuse2", "darkgreen", "darkred", 
+           "darkgray", "chocolate1", "greenyellow", "blue", "darkmagenta", "deeppink2",
+           "goldenrod1", "yellow1", "tan4", "tomato1", "olivedrab", "orangered"
+           ) 
+)
+```
+
+Explore the new tSNE and identify the 17 unique populations in relation to Scadden et al. figure.
+First make sure the keystone gene markers for the 6 main populations were maintained.
+```{r}
+# Plot keystone gene markers for all 6 major populations
+FeaturePlot(object = stdStromal,
+            features = c("Cxcl12", "Bglap", "Cdh5", "Acan", "S100a4", "Acta2"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 5,
+            cols = c("lightskyblue1", "red3")
+            )
+```
+
+Look at gene expression profiles to determine the 17 subpopulations then rename the clusters
+to match the Scadden et al. figure.
+```{r}
+# Markers for each population as per Scadden et al.
+# Lepr-MSC ("Lepr", "Adipoq", "Cxcl12", "Kitl", "Grem1", "Vcam1")
+# OLC-1 ("Bglap", "Runx2", "Sp7", "Cxcl12 high", "Cd200", "Spp1")
+# OLC-2 ("Bglap", "Runx2", "Sp7", "Cxcl12 low", "Grem1, "Mmp13)
+# Chondro-hyper ("Sox9", "Acan", "Col10a1", "Ihh", "Runx2", "Mef2c")
+# Chondro-progen ("Sox9", "Acan", "Col2a1", "Grem1", "Runx2", "Sp7", "Alpl", "Spp1")
+# Chondro ("Sox9", "Acan", "Col2a1")
+# Chondro-prehyper-2 ("Sox9", "Acan", "Col2a1", "Ihh", "Pth1r", "Mef2c")
+# Chondro-prol/rest ("Sox9", "Acan", "Col2a1")
+# Pericytes ("Acta2", "Nes", "Cspg4", "Myh11", "Mcam")
+# EC-sinusoidal ("Flt4 High", "Ly6a low", "Cd34", "Il6st")
+# EC-arteriolar ("Flt4 low", "Ly6a high", "Cd34", "Il6st")
+# EC-arterial ("Flt4", "Ly6a", "Cd34", "Il6st", "Kitl")
+# Fibro - c("Fn1", "S100a4", "Dcn", "Sema3c", "Cd34", "Ly6a", "Pdgfra", 
+#           "Thy1", "Cd44", "Sox9", "Scx", "Spp1", "Nt5e", "Cspg4", "Cilp")
+
+FeaturePlot(object = stdStromal,
+            features = c("Fn1", "S100a4", "Dcn", "Sema3c"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 4,
+            cols = c("lightskyblue1", "red3")
+            )
+VlnPlot(object = stdStromal,
+        features = c("Cxcl12", "Bglap", "Cdh5", "Acan", "S100a4", "Acta2"),
+        pt.size = 0.5,
+        ncol = 3,
+        idents = c(15,16)
+        )
+
+
+stdStromal <- RenameIdents(
+  object = stdStromal,
+  `0` = "3",
+  `1` = "1",
+  `2` = "0",
+  `3` = "2",
+  `4` = "4",
+  `5` = "6", 
+  `6` = "8",
+  `7` = "7",
+  `8` = "9",
+  `9` = "11",
+  `10` = "12",
+  `11` = "15",
+  `12` = "13",
+  `13` = "16",
+  `14` = "17",
+  `15` = "5",
+  `16` = "10"
+)
+
+# Set stromal tSNE plot to a ggplot variable
+stromalTsne <- DimPlot(
+  object = stdStromal,
+  reduction = "tsne",
+  label = TRUE,
+  label.size = 5
+)
+
+# Customize the legend to match the labeling of Scadden et at. figure
+stromalTsne + 
+  scale_color_manual(
+    labels = c("3, Fibro-4", "1, Lepr-MSC", "0, EC-sinusoidal", "2, Chondro-hyper",
+               "4, Chondro-progen", "6, EC-arteriolar", "8, OLC-2", "7, OLC-1",
+               "9, Fibro-1", "11, EC-arterial", "12, Pericytes", "15, Fibro-2",
+               "13, Chondro", "16, Fibro-3", "17, Chondro-prehyper-2", "5, Fibro-5",
+               "10, Chondro-prol/rest"),
+    values = c("aquamarine2", "blueviolet", "chartreuse2", "darkgreen", "darkred", 
+               "darkgray", "chocolate1", "greenyellow", "blue", "darkmagenta", "deeppink2",
+              "goldenrod1", "yellow1", "tan4", "tomato1", "olivedrab", "orangered")
+ )
+```
+
+Replot the keystone gene markers for the 6 main populations. Also include plot of keystone markers
+from Aifantis et al. figure
+```{r}
+FeaturePlot(object = stdStromal,
+            features = c("Cxcl12", "Bglap", "Cdh5", "Acan", "S100a4", "Acta2"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 5,
+            cols = c("lightskyblue1", "red3"), 
+            min.cutoff = 'q1'
+            )
+
+# Expression levels of genes associated with niche-specific Cre strains: Cdh5 (VE-Cad),
+# Lepr (LEPR) and Col1a1 (COL2.3)
+veCad <- FeaturePlot(
+  object = stdStromal,
+  features = c("Cdh5"),
+  reduction = "tsne",
+  label = TRUE,
+  label.size = 5,
+  cols = c("lightskyblue1", "red3"), 
+  min.cutoff = 'q1', 
+) + ggtitle("VE-Cad+ (Cdh5)")
+
+lepr <- FeaturePlot(
+  object = stdStromal,
+  features = c("Lepr"),
+  reduction = "tsne",
+  label = TRUE,
+  label.size = 5,
+  cols = c("lightskyblue1", "red3"), 
+  min.cutoff = 'q1', 
+) + ggtitle("LEPR+ (Lepr)")
+
+col2.3 <- FeaturePlot(
+  object = stdStromal,
+  features = c("Col1a1"),
+  reduction = "tsne",
+  label = TRUE,
+  label.size = 5,
+  cols = c("lightskyblue1", "red3"), 
+  min.cutoff = 'q1', 
+) + ggtitle("COL2.3+ (Col1a1)")
+
+CombinePlots(plots = list(veCad, lepr, col2.3))
+```
+
