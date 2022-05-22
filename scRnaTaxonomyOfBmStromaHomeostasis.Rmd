@@ -1036,8 +1036,8 @@ DimPlot(object = stdStromal,
                        reduction = "tsne",
                        label = TRUE,
                        label.size = 5) +
-  scale_color_manual(values = c("blue", "tan4", "orangered",
-                                "chartreuse2", "olivedrab", "darkmagenta"))
+  scale_color_manual(values = c("blue", "tan4", "olivedrab",
+                                "chartreuse2","orangered", "darkmagenta"))
   
 
 # Customize the legend to match the labeling of Scadden et at. figure
@@ -1121,8 +1121,8 @@ combo_plotter <- function(seurat_obj, gene, x_axis_names = "yes") {
     plot2 <- VlnPlot(object = seurat_obj,
                    features = gene,
                    pt.size = 0.5,
-                   cols = c("blue", "tan4", "orangered",
-                            "chartreuse2", "olivedrab", "darkmagenta")) +
+                   cols = c("blue", "tan4", "olivedrab",
+                            "chartreuse2","orangered", "darkmagenta")) +
              ggtitle("") +
              theme(legend.position = "none",
                    axis.title.x = element_blank())
@@ -1142,8 +1142,8 @@ combo_plotter <- function(seurat_obj, gene, x_axis_names = "yes") {
     plot2 <- VlnPlot(object = seurat_obj,
                    features = gene,
                    pt.size = 0.5,
-                   cols = c("blue", "tan4", "orangered",
-                            "chartreuse2", "olivedrab", "darkmagenta")) +
+                   cols = c("blue", "tan4", "olivedrab",
+                            "chartreuse2","orangered", "darkmagenta")) +
              ggtitle("") +
              theme(legend.position = "none",
                    axis.title.x = element_blank(),
@@ -1189,13 +1189,13 @@ final_plot2 <- ggarrange(plotlist = final_plot_slice2,
 # Export at 12 x 16 landscape
 final_plot1 + final_plot2
 
-# Export at 9 x 9 landscape
+# Export at 9 x 11 landscape
 DimPlot(object = stdStromal,
         reduction = "tsne",
         label = TRUE,
         label.size = 7) +
-  scale_color_manual(values = c("blue", "tan4", "orangered",
-                                "chartreuse2", "olivedrab", "darkmagenta"))
+  scale_color_manual(values = c("blue", "tan4", "olivedrab",
+                                "chartreuse2","orangered", "darkmagenta"))
 ```
 
 
