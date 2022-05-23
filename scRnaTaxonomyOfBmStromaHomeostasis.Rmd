@@ -642,7 +642,7 @@ granulocyteClusters <- c(14, 16, 31)
 DefaultAssay(stdIntegrated) <- "integrated"
 ```
 
-# DEPRECEATED, Not neede/Redundant
+## DEPRECEATED, Not neede/Redundant
 B-Cell/Granulocyte Filter (Cd52, Cd162, Cd20l3, Cd53)
 ```{r}
 # Visualize the distribution of cells expressing gene markers across all clusters
@@ -1099,7 +1099,7 @@ VlnPlot(object = stdStromal,
 DefaultAssay(stdStromal) <- "integrated"
 ```
 
-# ENDPOINT 1
+## ENDPOINT 1
 Export the images of the final analysis to show the 6 main cell types and cluster markers
 ```{r endpoint-1}
 main_cell_cluster_markers <- c("Cxcl12", "Bglap", "Cdh5", "Acan", "S100a4", "Acta2")
@@ -1208,6 +1208,9 @@ However, CCA-based integration may also lead to overcorrection, especially when 
 Identify anchors that will be used for integration of all the datasets using the CCA reduction method.
 After, scale the newly integrated dataset.
 ```{r}
+# Clean up
+rm(std1, std2, std3, std4, std5, std6)
+
 stdIntegrationAnchors <- FindIntegrationAnchors(object.list = stdList,
                                                 reduction = "cca",
                                                 anchor.features = stdIntegrationFeatures)
@@ -1348,7 +1351,7 @@ stdIntegrated <- FindNeighbors(object = stdIntegrated,
 # count increases.
 # May need to develop loop to test different resolutions.
 stdIntegrated <- FindClusters(object = stdIntegrated,
-                              resolution = 0.59,
+                              resolution = 0.64,
                               random.seed = 2019)
 ```
 
@@ -1378,9 +1381,6 @@ DimPlot(object = stdIntegrated,
 
 Visualize which clusters contain the key genes for identifying the interested populations
 ```{r}
-# Set default assay to "RNA" for this code block, will reset to "integrated" at end of block
-DefaultAssay(stdIntegrated) <- "RNA"
-
 # Markers for each population as per Scadden et al.
 # MSC - c("Lepr", "Adipoq", "Cxcl12", "Kitl", "Grem1", "Vcam1")
 # OLC - c("Bglap", "Runx2", "Sp7", "Cd200", "Spp1", "Grem1", "Mmp13")
@@ -1390,73 +1390,21 @@ DefaultAssay(stdIntegrated) <- "RNA"
 # Fibro - c("Fn1", "S100a4", "Dcn", "Sema3c", "Cd34", "Ly6a", "Pdgfra", 
 #           "Thy1", "Cd44" "Sox9", "Scx", "Spp1", "Nt5e", "Cspg4", "Cilp")
 
-# B cells - Cd79a
-# Erythroidal - Gypa
-# Macro/Megakaryocytes - Cd52
-# 
-
 # Isolate specific cell subpopulations within tSNE plots by feature
+DefaultAssay(stdIntegrated) <- "RNA"
 FeaturePlot(object = stdIntegrated,
-            features = c("Lepr", "Bglap", "Acan", "Acta2", "Cdh5", "Fn1"),
+            features = c("Cxcl12", "Bglap", "Cdh5", "Acan", "S100a4", "Acta2"),
             reduction = "tsne",
-            label = TRUE, 
-            cols = c("lightskyblue1", "red3"))
-
-FeaturePlot(object = stdIntegrated,
-            features = c("Cd79a", "Gypa", "Cd52", "Gp9"),
-            reduction = "tsne",
-            label = TRUE, 
+            label = TRUE,
+            ncol = 3,
             cols = c("lightskyblue1", "red3"))
 
 # Plot the distribution of expression for all cells related to specific genes
 # with a violin plot
 VlnPlot(object = stdIntegrated,
-        assay = "RNA",
-        features = c("Lepr", "Bglap", "Acan", "Acta2", "Cdh5", "Fn1"),
-        pt.size = 0.5,
-        ncol = 3)
-
-VlnPlot(object = stdIntegrated,
-        assay = "RNA",
-        features = c("Cd79a", "Gypa", "Cd52", "Gp9"),
+        features = c("Cxcl12", "Bglap", "Cdh5", "Acan", "S100a4", "Acta2"),
         pt.size = 0.5,
         ncol = 2)
-
-# Reset default assay to "integrated"
 DefaultAssay(stdIntegrated) <- "integrated"
 ```
 
-Identify hematopoietic cells based on expression of markers and isolate those cells from whole set
-to be filtered out of analysis.
-
-B-Cell Filter (Cd79a, Cd79b)
-```{r}
-# Visualize the distribution of cells expressing gene markers across all clusters
-FeaturePlot(object = stdIntegrated,
-            features = c("Cd79a", "Cd79b"),
-            reduction = "tsne",
-            label = TRUE,
-            label.size = 4,
-            cols = c("lightskyblue1", "red3")
-            )
-VlnPlot(object = stdIntegrated,
-        features = c("Cd79a", "Cd79b"),
-        pt.size = 0.5, 
-        idents = c(7, 9, 15, 31, 25)
-        )
-
-# Determine cutoff values for expression levels of gene markers based on expression across all cells
-markerCd79a <- stdIntegrated[["integrated"]]@scale.data["Cd79a",]
-quantile(markerCd79a, probs = seq(0.6, 1, 0.025))
-
-markerCd79b <- stdIntegrated[["integrated"]]@scale.data["Cd79b",]
-quantile(markerCd79b, probs = seq(0.6, 1, 0.025))
-
-# Identify all the cells that satisfy cutoff value which was selected to be between 85 and 90 quantile
-clusterFilter1 <- WhichCells(object = stdIntegrated,
-                             expression = Cd79a > 1 & Cd79b > 1
-                             )
-
-# Visualize count of cells per cluster
-clusterFilter1 <- table(stdIntegrated$seurat_clusters[clusterFilter1])
-```
