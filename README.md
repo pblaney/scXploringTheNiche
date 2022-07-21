@@ -2,7 +2,7 @@
 Single-cell eXploring the Bone Marrow Niche
 
 ## Single-Cell RNA-seq Analysis
-This is a collection of Rmarkdown files is associated with analysis of a set scRNA-seq expression matricies
+This is a collection of Rmarkdown files associated with analysis of scRNA-seq expression matricies generated in various published studies
 
 Depends on:
 * `make`
