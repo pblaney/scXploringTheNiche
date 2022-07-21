@@ -30,7 +30,7 @@ cellranger pipeline outputs 3 files that are used to create a Seurat object:
 
 The Read10X function is used to pull all 3 files together to then create the Seurat object
 ```{r}
-# WARNING - Dataset must first be downloaded, this can easily be done running the command 'make prep-datasets'
+# WARNING - Dataset must first be downloaded, this can easily be done running the command 'make prep-dataset-baryawno-homeostasis'
 
 # Read in all steady state gene expression sets
 std1 <- Read10X(data.dir = "data/gse128423/std1/")
