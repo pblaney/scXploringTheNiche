@@ -1,0 +1,839 @@
+---
+title: "Single-Cell RNA-seq Taxonomy of Bone Marrow Stroma: Control vs Leukemic"
+author: "Patrick Blaney"
+date: "11/1/2019"
+output: html_document
+---
+
+####################################
+Leukemic Bone Marrow Stroma Analysis
+####################################
+
+UPDATED: 7/20/2022
+
+Analyze the bone marrow stromal population using data from control and leukemic mice. 
+First perform integration of individual datasets under both conditions. Then integrate both
+condition datasets and perform clustering and dimensional reduction in same fashion as the
+integrated steady state dataset.
+
+Load in necessary packages.
+```{r, message=FALSE}
+library(Seurat)
+library(tidyverse)
+options(future.globals.maxSize= 10000000000)
+set.seed(2019)
+```
+
+# Analysis - Data Import
+
+Read in 10X files used to create Seurat objects.
+```{r}
+# WARNING - Dataset must first be downloaded, this can easily be done running the command 'make prep-dataset-baryawno-leukemic'
+
+control1 <- Read10X(data.dir = "data/gse128423/ctrl_10May/")
+control2 <- Read10X(data.dir = "data/gse128423/ctrl_16May/")
+control3 <- Read10X(data.dir = "data/gse128423/ctrl_26May/")
+control4 <- Read10X(data.dir = "data/gse128423/ctrl_7Jun/")
+control5 <- Read10X(data.dir = "data/gse128423/ctrl_8May/")
+leukemic1 <- Read10X(data.dir = "data/gse128423/MLL_10May/")
+leukemic2 <- Read10X(data.dir = "data/gse128423/MLL_26May/")
+leukemic3 <- Read10X(data.dir = "data/gse128423/MLL_31May/")
+leukemic4 <- Read10X(data.dir = "data/gse128423/MLL_8May/")
+```
+
+Instantiate Seurat objects using reads in 10X files
+```{r}
+# Creating Seurat objects for all 10x data files
+control1 <- CreateSeuratObject(counts = control1,
+                               project = "control1", 
+                               assay = "RNA")
+
+control2 <- CreateSeuratObject(counts = control2,
+                               project = "control2", 
+                               assay = "RNA")
+
+control3 <- CreateSeuratObject(counts = control3,
+                               project = "control3", 
+                               assay = "RNA")
+
+control4 <- CreateSeuratObject(counts = control4,
+                               project = "control4", 
+                               assay = "RNA")
+
+control5 <- CreateSeuratObject(counts = control5,
+                               project = "control5", 
+                               assay = "RNA")
+
+leukemic1 <- CreateSeuratObject(counts = leukemic1,
+                               project = "leukemic1", 
+                               assay = "RNA")
+
+leukemic2 <- CreateSeuratObject(counts = leukemic2,
+                               project = "leukemic2", 
+                               assay = "RNA")
+
+leukemic3 <- CreateSeuratObject(counts = leukemic3,
+                               project = "leukemic3", 
+                               assay = "RNA")
+
+leukemic4 <- CreateSeuratObject(counts = leukemic4,
+                               project = "leukemic4", 
+                               assay = "RNA")
+```
+
+QC of control1
+```{r}
+# Add column to @meta.data of Seurat object containing the percentage of mitochondrial
+# genome mapped reads. Pattern is unique to each 'gene.tsv' file
+control1[["Percent_MT"]] <- PercentageFeatureSet(object = control1,
+                                                 pattern = "^mt-")
+
+# Create biolin plots for QC metrics
+VlnPlot(object = control1,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"), 
+        group.by = 'orig.ident')
+
+# Filter dataset based on QC metrics
+control1 <- subset(
+  x = control1,
+  subset = nFeature_RNA < 2000 &
+           nFeature_RNA > 500 &
+           nCount_RNA < 4750 &
+           Percent_MT < 5 &
+           Percent_MT > 0.5)
+
+# Revisualize the QC metrics after filtering
+VlnPlot(object = control1,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"),
+        group.by = 'orig.ident')
+```
+
+QC of control2
+```{r}
+# Add column to @meta.data of Seurat object containing the percentage of mitochondrial
+# genome mapped reads. Pattern is unique to each 'gene.tsv' file
+control2[["Percent_MT"]] <- PercentageFeatureSet(object = control2,
+                                                 pattern = "^mt-")
+
+# Create biolin plots for QC metrics
+VlnPlot(object = control2,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"), 
+        group.by = 'orig.ident')
+
+# Filter dataset based on QC metrics
+control2 <- subset(
+  x = control2,
+  subset = nFeature_RNA < 1750 &
+           nFeature_RNA > 500 &
+           nCount_RNA < 4250 &
+           Percent_MT < 5 &
+           Percent_MT > 0.5)
+
+# Revisualize the QC metrics after filtering
+VlnPlot(object = control2,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"),
+        group.by = 'orig.ident')
+```
+
+QC of control3
+```{r}
+# Add column to @meta.data of Seurat object containing the percentage of mitochondrial
+# genome mapped reads. Pattern is unique to each 'gene.tsv' file
+control3[["Percent_MT"]] <- PercentageFeatureSet(object = control3,
+                                                 pattern = "^mt-")
+
+# Create biolin plots for QC metrics
+VlnPlot(object = control3,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"), 
+        group.by = 'orig.ident')
+
+# Filter dataset based on QC metrics
+control3 <- subset(
+  x = control3,
+  subset = nFeature_RNA < 1750 &
+           nFeature_RNA > 500 &
+           nCount_RNA < 4500 &
+           Percent_MT < 6 &
+           Percent_MT > 0.5)
+
+# Revisualize the QC metrics after filtering
+VlnPlot(object = control3,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"),
+        group.by = 'orig.ident')
+```
+
+QC of control4
+```{r}
+# Add column to @meta.data of Seurat object containing the percentage of mitochondrial
+# genome mapped reads. Pattern is unique to each 'gene.tsv' file
+control4[["Percent_MT"]] <- PercentageFeatureSet(object = control4,
+                                                 pattern = "^mt-")
+
+# Create biolin plots for QC metrics
+VlnPlot(object = control4,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"), 
+        group.by = 'orig.ident')
+
+# Filter dataset based on QC metrics
+control4 <- subset(
+  x = control4,
+  subset = nFeature_RNA < 2000 &
+           nFeature_RNA > 500 &
+           nCount_RNA < 5000 &
+           Percent_MT < 4.5 &
+           Percent_MT > 0.5)
+
+# Revisualize the QC metrics after filtering
+VlnPlot(object = control4,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"),
+        group.by = 'orig.ident')
+```
+
+QC of control5
+```{r}
+# Add column to @meta.data of Seurat object containing the percentage of mitochondrial
+# genome mapped reads. Pattern is unique to each 'gene.tsv' file
+control5[["Percent_MT"]] <- PercentageFeatureSet(object = control5,
+                                                 pattern = "^mt-")
+
+# Create biolin plots for QC metrics
+VlnPlot(object = control5,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"), 
+        group.by = 'orig.ident')
+
+# Filter dataset based on QC metrics
+control5 <- subset(
+  x = control5,
+  subset = nFeature_RNA < 2000 &
+           nFeature_RNA > 500 &
+           nCount_RNA < 5000 &
+           Percent_MT < 6 &
+           Percent_MT > 0.5)
+
+# Revisualize the QC metrics after filtering
+VlnPlot(object = control5,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"),
+        group.by = 'orig.ident')
+```
+
+QC of leukemic1
+```{r}
+# Add column to @meta.data of Seurat object containing the percentage of mitochondrial
+# genome mapped reads. Pattern is unique to each 'gene.tsv' file
+leukemic1[["Percent_MT"]] <- PercentageFeatureSet(object = leukemic1,
+                                                 pattern = "^mt-")
+
+# Create biolin plots for QC metrics
+VlnPlot(object = leukemic1,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"), 
+        group.by = 'orig.ident')
+
+# Filter dataset based on QC metrics
+leukemic1 <- subset(
+  x = leukemic1,
+  subset = nFeature_RNA < 3500 &
+           nFeature_RNA > 500 &
+           nCount_RNA < 13000 &
+           Percent_MT < 4.5 &
+           Percent_MT > 0.5)
+
+# Revisualize the QC metrics after filtering
+VlnPlot(object = leukemic1,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"),
+        group.by = 'orig.ident')
+```
+
+QC of leukemic2
+```{r}
+# Add column to @meta.data of Seurat object containing the percentage of mitochondrial
+# genome mapped reads. Pattern is unique to each 'gene.tsv' file
+leukemic2[["Percent_MT"]] <- PercentageFeatureSet(object = leukemic2,
+                                                 pattern = "^mt-")
+
+# Create biolin plots for QC metrics
+VlnPlot(object = leukemic2,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"), 
+        group.by = 'orig.ident')
+
+# Filter dataset based on QC metrics
+leukemic2 <- subset(
+  x = leukemic2,
+  subset = nFeature_RNA < 3000 &
+           nFeature_RNA > 500 &
+           nCount_RNA < 10000 &
+           Percent_MT < 6 &
+           Percent_MT > 0.5)
+
+# Revisualize the QC metrics after filtering
+VlnPlot(object = leukemic2,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"),
+        group.by = 'orig.ident')
+```
+
+QC of leukemic3
+```{r}
+# Add column to @meta.data of Seurat object containing the percentage of mitochondrial
+# genome mapped reads. Pattern is unique to each 'gene.tsv' file
+leukemic3[["Percent_MT"]] <- PercentageFeatureSet(object = leukemic3,
+                                                 pattern = "^mt-")
+
+# Create biolin plots for QC metrics
+VlnPlot(object = leukemic3,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"), 
+        group.by = 'orig.ident')
+
+# Filter dataset based on QC metrics
+leukemic3 <- subset(
+  x = leukemic3,
+  subset = nFeature_RNA < 3000 &
+           nFeature_RNA > 500 &
+           nCount_RNA < 10000 &
+           Percent_MT < 7.5 &
+           Percent_MT > 0.5)
+
+# Revisualize the QC metrics after filtering
+VlnPlot(object = leukemic3,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"),
+        group.by = 'orig.ident')
+```
+
+QC of leukemic4
+```{r}
+# Add column to @meta.data of Seurat object containing the percentage of mitochondrial
+# genome mapped reads. Pattern is unique to each 'gene.tsv' file
+leukemic4[["Percent_MT"]] <- PercentageFeatureSet(object = leukemic4,
+                                                  pattern = "^mt-")
+
+# Create biolin plots for QC metrics
+VlnPlot(object = leukemic4,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"), 
+        group.by = 'orig.ident')
+
+# Filter dataset based on QC metrics
+leukemic4 <- subset(
+  x = leukemic4,
+  subset = nFeature_RNA < 3000 &
+           nFeature_RNA > 500 &
+           nCount_RNA < 10000 &
+           Percent_MT < 6 &
+           Percent_MT > 0.5)
+
+# Revisualize the QC metrics after filtering
+VlnPlot(object = leukemic4,
+        features = c("nFeature_RNA", "nCount_RNA", "Percent_MT"),
+        group.by = 'orig.ident')
+```
+
+# Analysis - Normalization, Variable Feature Selection, Scaling, PCA
+
+Perform normalization and variable feature selection on all std objects
+```{r}
+# Combine all objects into a single list to apply normalization and variable feature selection
+multiConditionList <- list(control1, control2, control3, control4, control5,
+                           leukemic1, leukemic2, leukemic3, leukemic4)
+
+multiConditionList <- lapply(X = multiConditionList, FUN =  function(x) {
+  # Normalize by relative count to align with publication
+  x <- NormalizeData(object = x,
+                     normalization.method = "LogNormalize",
+                     scale.factor = 10000,
+                     verbose = FALSE)
+  
+  # Determine top 5000 features with high cell-to-cell variation using 'vst' selection method.
+  # Newer method, fits line to relationship of log(variance) and log(mean expression) with
+  # polynomial regression to give regularized estimator of variance given mean expression of
+  # a feature. Then calculates z-scores based on observed mean expression and estimated variance.
+  # Using the z-score standardized values, the dispersion is computed across all cells and ranked.
+  x <- FindVariableFeatures(object = x,
+                            selection.method = "vst",
+                            nfeatures = 5000,
+                            verbose = FALSE)
+})
+```
+
+Select features among the datasets for downstream integration and run PCA on all of them using
+the integration features after scaling the data
+```{r}
+multiConditionIntegrationFeatures <- SelectIntegrationFeatures(object.list = multiConditionList,
+                                                               nfeatures = 5000)
+
+multiConditionList <- lapply(X = multiConditionList, FUN = function(x) {
+  x <- ScaleData(object = x,
+                 features = multiConditionIntegrationFeatures,
+                 verbose = FALSE)
+  
+  x <- RunPCA(object = x,
+              features = multiConditionIntegrationFeatures,
+              verbose = FALSE)
+})
+```
+
+# Analysis - Canonical Correlation Analysis (CCA) Integration
+
+Identify anchors that will be used for integration of all the datasets using the CCA method. After, scale the newly integrated dataset.
+```{r}
+multiConditionIntegrationAnchors <- FindIntegrationAnchors(object.list = multiConditionList,
+                                                           reduction = "cca",
+                                                           anchor.features = multiConditionIntegrationFeatures)
+
+multiConditionIntegrated <- IntegrateData(anchorset = multiConditionIntegrationAnchors)
+
+multiConditionIntegrated <- ScaleData(object = multiConditionIntegrated,
+                                      verbose = FALSE)
+
+# Space clean up
+rm(control1, control2, control3, control4, control5,
+   leukemic1, leukemic2, leukemic3, leukemic4, multiConditionList)
+```
+
+Before conducting any sort of dimensional reduction, filters can be applied to the set of
+variable features to remove genes that are not of interest or could muddy the analysis.
+Common filters would be for mitochondrial genes or ribosomal protein genes.
+```{r, message=FALSE}
+allGenes <- rownames(multiConditionIntegrated[['RNA']]@counts)
+
+# First filter out all mitochondrial genes by finding all included in original gene
+# list, then checking the variable feature list to see if any of those genes were included.
+# If so, remove them from the variable feature set.
+mitochondrialGenes <- grep(pattern = "mt-",
+                           x = allGenes,
+                           ignore.case = TRUE,
+                           value = TRUE)
+
+# Remove the mitochondrial genes from the variable features list
+multiConditionIntegrated[['integrated']]@var.features <- setdiff(x = multiConditionIntegrated[['integrated']]@var.features,
+                                                                 y = mitochondrialGenes)
+
+# To remove ribosomal protein genes, read in gene list sourced from the HUGO Gene
+# Nomenclature Committee (HGNC) and parse it to isolate gene names
+hgncRibosomalProteinGeneList <- read_delim(file = "data/hgncRibosomalProteinGeneList.txt",
+                                           col_names = TRUE, 
+                                           delim = "\t")$`Approved symbol`
+
+# Loop through ribosomal protein gene list and determine if that gene is listed
+# in the original full gene list
+ribosomalProteinGenes <- character()
+for(i in 1:length(hgncRibosomalProteinGeneList)) {
+        geneMatch <- grep(
+                pattern = paste("^", hgncRibosomalProteinGeneList[i], "$", sep = ""),
+                x = allGenes,
+                ignore.case = TRUE,
+                value = TRUE,
+                perl = TRUE)
+        ribosomalProteinGenes <- c(ribosomalProteinGenes, geneMatch)
+}
+ribosomalProteinGenes <- unique(ribosomalProteinGenes)
+
+# Remove the ribosomal protein genes from the variable features list
+multiConditionIntegrated[['integrated']]@var.features <- setdiff(x = multiConditionIntegrated[['integrated']]@var.features,
+                                                                 y = ribosomalProteinGenes)
+
+# To remove cell cycle genes, read in gene list sourced from KEGG/Broad Institute
+keggCellCycleGeneList <- as_vector(
+        read_csv(file = "data/keggGeneSet.txt",
+                 col_names = "gene",
+                 skip = 2))
+
+# Loop through cell cycle gene list and determine if that gene is listed
+# in the original full gene list
+cellCycleGenes <- character()
+for(i in 1:length(keggCellCycleGeneList)) {
+        geneMatch <- grep(
+                pattern = paste("^", keggCellCycleGeneList[i], "$", sep = ""),
+                x = allGenes,
+                ignore.case = TRUE,
+                value = TRUE,
+                perl = TRUE)
+        cellCycleGenes <- c(cellCycleGenes, geneMatch)
+}
+
+# Remove the cell cycle genes from the variable features list
+multiConditionIntegrated[['integrated']]@var.features <- setdiff(x = multiConditionIntegrated[['integrated']]@var.features,
+                                                                 y = cellCycleGenes)
+```
+
+Now a PCA can be performed on the integrated data after scaling. By default this is done on the 
+set of variable features that were determined upstream. However, this can be overwritten by 
+specifying with the 'features' argument. All visualizations require a 'RunPCA' function call 
+before they can be output.
+```{r}
+# Add the 'pca' reduction to the Seurat object based on the variable features
+multiConditionIntegrated <- RunPCA(object = multiConditionIntegrated,
+                                   verbose = FALSE,
+                                   npcs = 65)
+
+# Produce a PCA plot where each point represents a cell and its position relative to the
+# origin point (0,0) shows how much influence it has on the that particular PC. Additionally,
+# the correlation between two points can be determined by the angle between the vectors from
+# each point to the origin point. Smaller the angle, the more positive correlation.
+# Perpendicular angles mean likely no correlation.
+DimPlot(object = multiConditionIntegrated,
+        reduction = "pca")
+
+# Display a heatmap showing how genes correlate with what PC. Each line represents a cell
+# and the color represents the loading of the gene (the genes shown are most extremely variable)
+# with black being 0, yellow being positive and purple being negative.
+DimHeatmap(object = multiConditionIntegrated,
+           dims = 1,
+           balanced = TRUE)
+
+# The elbow plot displays a ranking of the PCs based on the percentage of variance explained
+# by each one.
+# There are 3 suggested methods for determining the cutoff for PCs to evaluate: PCA plotting
+# along with heatmaps, elbow plots, and jackStraw plots.
+ElbowPlot(object = multiConditionIntegrated, ndims = 65) +
+  geom_abline(aes(intercept = 1.75, slope = 0, color = "red"), show.legend = FALSE)
+```
+
+Now that the PCA has been performed and relevant PCs identified, the next step is to cluster
+the cells. The method starts by first constructing a kNN graph based on the euclidean distance
+in the PCA space and then incorporates sNN information. Next, the clusters are determined using
+modularity optimization techniques, default is the Louvain algorithm. 
+```{r}
+# First implement the kNN/sNN algorithm by specifying the number of PC dimensions identified
+# in previous step
+multiConditionIntegrated <- FindNeighbors(object = multiConditionIntegrated,
+                                          dims = 1:50)
+
+# Next determine the clusters using the Louvain alogrithm by specifying the resolution.
+# The benchmark is between 0.4-1.2 for a 3000 cell dataset, should be increased as cell
+# count increases.
+# May need to develop loop to test different resolutions.
+multiConditionIntegrated <- FindClusters(object = multiConditionIntegrated,
+                                         resolution = 0.4,
+                                         random.seed = 2019)
+```
+
+With the clusters determined, the use of non-linear dimensional reduction plots such as
+tSNE and UMAP are great to visualize them.
+```{r}
+# Add the tSNE reduction to the Seurat object using same amount of dimensions as clustering
+# method
+multiConditionIntegrated <- RunTSNE(object = multiConditionIntegrated,
+                                    dims = 1:50)
+
+# Plot the tSNE reduction grouped by sample origin then by cluster
+DimPlot(object = multiConditionIntegrated,
+        reduction = "tsne",
+        group.by = 'orig.ident')
+
+DimPlot(object = multiConditionIntegrated,
+        reduction = "tsne",
+        label = TRUE,
+        label.size = 5,
+        cols = c("aquamarine2", "blueviolet", "chartreuse2", "darkgreen", "darkred", 
+                 "darkgray", "chocolate1", "coral4", "blue", "darkmagenta", "deeppink2",
+                 "goldenrod1", "yellow1", "tan4", "tomato1", "olivedrab", "navajowhite2",
+                 "orangered", "palegreen", "peru", "plum1", "purple3", "red2", "salmon",
+                 "seagreen", "magenta"))
+```
+
+# CHECKPOINT 1
+Save base Seurat obj after integration, dimensionality reduction, embedding, and clustering
+Load as a checkpoint
+```{r checkpoint-1}
+#saveRDS(object = multiConditionIntegrated, file = "data/multiConditionIntegrated.rds")
+#multiConditionIntegrated <- readRDS(file = "data/multiConditionIntegrated.rds")
+```
+
+# Analysis - Hematopoietic Cluster Identification
+
+Visualize which clusters contain the key genes for identifying the interested populations
+```{r}
+# Markers for each population as per Scadden et al.
+# MSC - c("Lepr", "Adipoq", "Cxcl12", "Kitl", "Grem1", "Vcam1")
+# OLC - c("Bglap", "Runx2", "Sp7", "Cd200", "Spp1", "Grem1", "Mmp13")
+# Chondro - c("Sox9", "Acan", "Col2a1", "Ihh", "Pth1r", "Mef2c")
+# Pericyte - c("Acta2", "Nes", "Cspg4", "Myh11", "Mcam")
+# EC - c("Pecam1", "Cdh5", "Cd34", "Kdr", "Emcn", "Flt4", "Ly6a")
+# Fibro - c("Fn1", "S100a4", "Dcn", "Sema3c", "Cd34", "Ly6a", "Pdgfra", 
+#           "Thy1", "Cd44" "Sox9", "Scx", "Spp1", "Nt5e", "Cspg4", "Cilp")
+
+# Isolate specific cell subpopulations within tSNE plots by feature
+DefaultAssay(multiConditionIntegrated) <- "RNA"
+FeaturePlot(object = multiConditionIntegrated,
+            features = c("Cxcl12", "Bglap", "Cdh5", "Acan", "S100a4", "Acta2"),
+            reduction = "tsne",
+            label = TRUE,
+            ncol = 3,
+            cols = c("lightskyblue1", "red3"))
+
+# Plot the distribution of expression for all cells related to specific genes
+# with a violin plot
+VlnPlot(object = multiConditionIntegrated,
+        features = c("Cxcl12", "Bglap", "Cdh5", "Acan", "S100a4", "Acta2"),
+        pt.size = 0.5,
+        ncol = 2)
+DefaultAssay(multiConditionIntegrated) <- "integrated"
+```
+
+Identify hematopoietic cells based on expression of markers and isolate those cells from whole set
+to be filtered out of analysis.
+
+B-Cell Filter (Cd79a, Cd79b)
+```{r}
+# Visualize the distribution of cells expressing gene markers across all clusters
+DefaultAssay(multiConditionIntegrated) <- "RNA"
+FeaturePlot(object = multiConditionIntegrated,
+            features = c("Cd79a", "Cd79b"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 4,
+            cols = c("lightskyblue1", "red3"))
+# Appears to be 3, 4, 5, 15, 16
+VlnPlot(object = multiConditionIntegrated,
+        features = c("Cd79a", "Cd79b"),
+        pt.size = 0.5, 
+        idents = c(0, 6, 3, 4, 15, 5, 16))
+
+bcellClusters <- c(3, 4, 5, 15, 16)
+DefaultAssay(multiConditionIntegrated) <- "integrated"
+```
+
+Erythroid Filter (Cd235a, Cd113t-C, Cd241, Cd240ce, Cd71)
+```{r}
+# Visualize the distribution of cells expressing gene markers across all clusters
+DefaultAssay(multiConditionIntegrated) <- "RNA"
+FeaturePlot(object = multiConditionIntegrated,
+            features = c("Klf1", "Epb42"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 4,
+            cols = c("lightskyblue1", "red3"))
+# Looks like 20
+VlnPlot(object = multiConditionIntegrated,
+        features = c("Klf1", "Epb42"),
+        pt.size = 0.5)
+
+erythroidClusters <- c(20)
+DefaultAssay(multiConditionIntegrated) <- "integrated"
+```
+
+Granulocyte Filter (Cd52, Cd177, Cd367, Cd87)
+```{r}
+# Visualize the distribution of cells expressing gene markers across all clusters
+DefaultAssay(multiConditionIntegrated) <- "RNA"
+FeaturePlot(object = multiConditionIntegrated,
+            features = c("Cd52", "Cd177", "Plaur", "Clec4a2"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 4,
+            cols = c("lightskyblue1", "red3"))
+# looks like 1, 8, 13, 17, 24
+VlnPlot(object = multiConditionIntegrated,
+        features = c("Cd52", "Cd177", "Plaur", "Clec4a2"),
+        pt.size = 0.5, 
+        idents = c(0, 8, 13, 17, 24),
+        ncol = 2)
+
+granulocyteClusters <- c(1, 8, 13, 17, 24)
+DefaultAssay(multiConditionIntegrated) <- "integrated"
+```
+
+Macrocyte/Megakaryocyte Filter (Cd42a, Cd41, Cd9, Cd42c)
+```{r}
+# Visualize the distribution of cells expressing gene markers across all clusters
+DefaultAssay(multiConditionIntegrated) <- "RNA"
+FeaturePlot(object = multiConditionIntegrated,
+            features = c("Gp9", "Itga2b", "Cd9", "Gp1bb"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 4,
+            cols = c("lightskyblue1", "red3"))
+# looks like 18
+VlnPlot(object = multiConditionIntegrated,
+        features = c("Gp9", "Itga2b", "Cd9", "Gp1bb"),
+        pt.size = 0.5,
+        idents = c(0, 18),
+        ncol = 2)
+
+macroAndMegaClusters <- c(18)
+DefaultAssay(multiConditionIntegrated) <- "integrated"
+```
+
+Additional Granulocyte Filter (Cd20l, Cd371, Cd32a)
+```{r}
+# Visualize the distribution of cells expressing gene markers across all clusters
+DefaultAssay(multiConditionIntegrated) <- "RNA"
+FeaturePlot(object = multiConditionIntegrated,
+            features = c("Ms4a3", "Clec12a", "Fcgr3"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 4,
+            cols = c("lightskyblue1", "red3"))
+
+VlnPlot(object = multiConditionIntegrated,
+        features = c("Ms4a3", "Clec12a", "Fcgr3"),
+        pt.size = 0.5,
+        ncol = 2)
+
+#additionalContaminationCluster <- 
+DefaultAssay(multiConditionIntegrated) <- "integrated"
+```
+
+First compare lists of annotated clusters of hematopoietic vs non-hematopoietic to see if
+which clusters are potential overlaps as they could indicate doublets or an expected
+correlation. Combine all cluster filters to determine which clusters to remove from the 
+analysis then subset the dataset to rest of clusters before re-evaluating the clustering
+```{r}
+# List all clusters that were annotated as hematopoietic
+hematopoieticClusters <- c(bcellClusters,
+                           erythroidClusters,
+                           granulocyteClusters,
+                           macroAndMegaClusters)
+
+# List all clusters that were annotated as non-hematopoietic
+nonHematopoieticClusters <- c(0, 2, 6, 7, 9, 10, 11, 12, 14, 19, 21, 22, 23, 25)
+
+# Total all the cells that were caught by filters per each cluster
+hematopoieticFilterCount <- c()
+for(i in 1:length(hematopoieticClusters)) {
+  hematopoieticFilterCount[i] <- CellsByIdentities(object = multiConditionIntegrated,
+                                                   idents = hematopoieticClusters[i]) %>%
+                                   as_vector() %>%
+                                   length()
+}
+sum(hematopoieticFilterCount)
+```
+
+# Analysis - Stromal Subset
+
+Subset dataset to remove the clusters identified as containing hematopoietic cells then recluster
+and visualize the improved tSNE
+```{r}
+multiConditionStromal <- subset(x = multiConditionIntegrated, 
+                                idents = nonHematopoieticClusters)
+
+# Rerun the PCA on the stromal population clusters alone
+multiConditionStromal <- RunPCA(object = multiConditionStromal,
+                                npcs = 50)
+
+# Recalculate the neighbors and clusters for the stromal population 
+multiConditionStromal <- FindNeighbors(object = multiConditionStromal,
+                                       dims = 1:50)
+
+multiConditionStromal <- FindClusters(object = multiConditionStromal,
+                                      resolution = 0.4,
+                                      random.seed = 2019)
+
+# Rerun the tSNE on the stromal population
+multiConditionStromal <- RunTSNE(object = multiConditionStromal,
+                                 dims = 1:50)
+
+# Plot the new tSNE of stromal population
+DimPlot(
+  object = multiConditionStromal,
+  reduction = "tsne",
+  label = TRUE,
+  label.size = 5,
+  cols = c("aquamarine2", "blueviolet", "chartreuse2", "darkgreen", "darkred", 
+           "darkgray", "chocolate1", "greenyellow", "blue", "darkmagenta", "deeppink2",
+           "goldenrod1", "yellow1", "tan4", "tomato1", "olivedrab", "orangered"))
+```
+
+# CHECKPOINT 2
+Save stromal Seurat obj, done after subsetting out hematopoietic clusters then reperforming dimensionality
+reduction, embedding, clustering 
+Load as a checkpoint
+```{r checkpoint-2}
+#saveRDS(object = multiConditionStromal, file = "data/multiConditionStromal.rds")
+#multiConditionStromal <- readRDS(file = "data/multiConditionStromal.rds")
+```
+
+
+# Analysis - Stromal High Resolution Cluster Identification
+
+Explore the new tSNE and identify the 17 unique populations in relation to Scadden et al. figure.
+First make sure the keystone gene markers for the 6 main populations were maintained.
+```{r}
+# Plot keystone gene markers for all 6 major populations
+DefaultAssay(multiConditionStromal) <- "RNA"
+FeaturePlot(object = multiConditionStromal,
+            features = c("Cxcl12", "Bglap", "Cdh5", "Acan", "S100a4", "Acta2"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 5,
+            ncol = 3,
+            cols = c("lightskyblue1", "red3"))
+DefaultAssay(multiConditionStromal) <- "integrated"
+```
+
+Clear additional contamination left from first filter step
+```{r}
+multiConditionStromal <- subset(x = multiConditionStromal, 
+                                idents = c(1,2,3,4,5,
+                                           6,7,8,9,10,
+                                           11,12,14,15))
+
+# Rerun the PCA on the stromal population clusters alone
+multiConditionStromal <- RunPCA(object = multiConditionStromal,
+                                npcs = 50)
+
+# Recalculate the neighbors and clusters for the stromal population 
+multiConditionStromal <- FindNeighbors(object = multiConditionStromal,
+                                       dims = 1:50)
+
+multiConditionStromal <- FindClusters(object = multiConditionStromal,
+                                      resolution = 0.3,
+                                      random.seed = 2019)
+
+# Rerun the tSNE on the stromal population
+multiConditionStromal <- RunTSNE(object = multiConditionStromal,
+                                 dims = 1:50)
+
+# Plot the new tSNE of stromal population
+DimPlot(
+  object = multiConditionStromal,
+  reduction = "tsne",
+  label = TRUE,
+  label.size = 5,
+  cols = c("aquamarine2", "blueviolet", "chartreuse2", "darkgreen", "darkred", 
+           "darkgray", "chocolate1", "greenyellow", "blue", "darkmagenta", "deeppink2",
+           "goldenrod1", "yellow1", "tan4"))
+```
+
+Explore the new tSNE and identify the 17 unique populations in relation to Scadden et al. figure.
+First make sure the keystone gene markers for the 6 main populations were maintained.
+```{r}
+# Plot keystone gene markers for all 6 major populations
+DefaultAssay(multiConditionStromal) <- "RNA"
+FeaturePlot(object = multiConditionStromal,
+            features = c("Cxcl12", "Bglap", "Cdh5", "Acan", "S100a4", "Acta2"),
+            reduction = "tsne",
+            label = TRUE,
+            label.size = 5,
+            ncol = 3,
+            cols = c("lightskyblue1", "red3"))
+DefaultAssay(multiConditionStromal) <- "integrated"
+```
+
+Cluster re-identification
+```{r}
+multiConditionStromal <- RenameIdents(object = multiConditionStromal,
+                           `0` = "MSCs",
+                           `1` = "MSCs",
+                           `2` = "Fibroblasts",
+                           `3` = "Endothelials",
+                           `4` = "Endothelials",
+                           `5` = "Endothelials", 
+                           `6` = "Fibroblasts",
+                           `7` = "OLCs",
+                           `8` = "Pericytes",
+                           `9` = "MSCs",
+                           `10` = "Endothelials",
+                           `11` = "Chondrocytes",
+                           `12` = "OLCs",
+                           `13` = "MSCs")
+multiConditionStromal@active.ident <- factor(multiConditionStromal@active.ident,
+                                  levels = c("MSCs", "OLCs", "Endothelials",
+                                             "Chondrocytes", "Fibroblasts", "Pericytes"))
+
+# Visualize broad cell lineages
+DimPlot(object = multiConditionStromal,
+                       reduction = "tsne",
+                       label = TRUE,
+                       label.size = 5) +
+  scale_color_manual(values = c("blue", "tan4", "olivedrab",
+                                "chartreuse2","orangered", "darkmagenta"))
+```
+
